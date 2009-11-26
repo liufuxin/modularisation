@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="scala-core">
+    <!--
+
+       This build is a modular build for the scala-core artifact.  It builds only core pieces of the scala-library
+       needed to run a scala program.
+
+
+
+       This build currently requires the following:
+
+       Tasks:
+          scalac
+          stopwatch
+       Properties:
+          build.classfile.dir (optional)
+          build.classpath
+          bootstrap.classpath
+          build.module.dir
+          build.pass
+          build.pass.module.dir (optional)
+          javac.args
+          scalac.args.all
+          scalacfork.jvmargs
+          src.dir
+    -->
+    <property name="build.pass.module.dir" value="${build.module.dir}/${build.pass}/scala-core"/>
+    <property name="build.classfile.dir" value="${build.pass.module.dir}/classes/"/>
+    <property name="module.src.dir" value="${src.dir}/library"/>
+    <property name="build.pass.module.complete.file" value="${build.pass.module.dir}/scala-core.complete"/>
+
+
+    <fileset id="scala-files" dir="${module.src.dir}">
+        <include name="scala/*.scala"/>
+        <include name=" scala/annotation/*.scala"/>
+        <include name=" scala/annotation/target/*.scala"/>
+        <include name=" scala/annotation/unchecked/*.scala"/>
+        <include name=" scala/collection/*.scala"/>
+        <include name=" scala/collection/generic/*.scala"/>
+        <include name=" scala/collection/immutable/*.scala"/>
+        <include name=" scala/collection/mutable/*.scala"/>
+        <include name=" scala/compat/*.scala"/>
+        <include name=" scala/io/*.scala"/>
+        <include name=" scala/math/*.scala"/>
+        <include name=" scala/mobile/*.scala"/>
+        <include name=" scala/ref/*.scala"/>
+        <include name=" scala/reflect/*.scala"/>
+        <include name=" scala/runtime/*.scala"/>
+        <include name=" scala/text/*.scala"/>
+        <include name=" scala/util/*.scala"/>
+        <include name=" scala/util/automata/*.scala"/>
+        <include name=" scala/util/grammar/*.scala"/>
+        <include name=" scala/util/control/*.scala"/>
+        <include name=" scala/util/logging/*.scala"/>
+        <include name=" scala/util/regexp/*.scala"/>
+        <include name=" scala/xml/*.scala"/>
+        <include name=" scala/xml/dtd/*.scala"/>
+        <include name=" scala/xml/factory/*.scala"/>
+        <include name=" scala/xml/include/*.scala"/>
+        <include name=" scala/xml/include/sax/*.scala"/>
+        <include name=" scala/xml/parsing/*.scala"/>
+        <include name=" scala/xml/persistent/*.scala"/>
+        <include name=" scala/xml/pull/*.scala"/>
+        <include name=" scala/xml/transform/*.scala"/>
+    </fileset>
+
+
+
+    <target name="prepare" description="Creates directory to for all module resources">
+        <mkdir dir="${build.classfile.dir}"/>
+    </target>
+
+    <target name="copy-resources" depends="prepare" description="Copies over resources from source directories into output classpath.">
+        <copy todir="${build.classfile.dir}">
+          <fileset dir="${module.src.dir}">
+            <include name="**/*.tmpl"/>
+            <include name="**/*.xml"/>
+            <include name="**/*.js"/>
+            <include name="**/*.css"/>
+          </fileset>
+        </copy>
+    </target>
+
+
+    <target name="compile" depends="prepare">
+        <stopwatch name="${build.pass}.scala-core.compile.timer"/>
+        <javac
+          srcdir="${module.src.dir}"
+          destdir="${build.classfile.dir}"
+          classpath="build.classpath"
+          includes="**/*.java"
+          target="1.5" source="1.5">
+            <compilerarg line="${javac.args}"/>
+        </javac>
+        <!-- NOTE: Potential problem with maximal command line length on Windows
+             (32768 characters for XP, since executed with Java's "exec"). See
+             src/build/msil.xml in msil branch for more details. -->
+        <scalacfork
+          destdir="${build.classfile.dir}"
+          compilerpathref="bootstrap.classpath"
+          srcpath="${module.src.dir}"
+          params="${scalac.args.all}"
+          srcdir="${module.src.dir}"
+          jvmargs="${scalacfork.jvmargs}">
+          <include name="**/*.scala"/>
+          <compilationpath>
+            <pathelement location="${build.classfile.dir}"/>
+          </compilationpath>
+        </scalacfork>
+
+        <propertyfile file="${build.classfile.dir}/library.properties">
+          <entry key="version.number" value="${version.number}"/>
+          <entry key="copyright.string" value="${copyright.string}"/>
+        </propertyfile>
+
+        <!-- TODO - Use this file to determine if we're done executing! -->
+        <!-- <touch file="${build.pass.module.complete.file}/library.complete" verbose="no"/> -->
+
+        <stopwatch name="${build-pass-name}.scala-core.compile.timer" action="total"/>
+    </target>
+</project>
